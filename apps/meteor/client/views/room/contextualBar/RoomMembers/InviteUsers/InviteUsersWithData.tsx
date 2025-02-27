@@ -80,15 +80,25 @@ const InviteUsersWithData = ({ rid, onClickBack }: InviteUsersWithDataProps): Re
 	);
 
 	useEffect(() => {
-		(async (): Promise<void> => {
+		let mounted = true;
+		const generateInvite = async (): Promise<void> => {
 			try {
 				const data = await findOrCreateInvite({ rid, days: Number(days), maxUses: Number(maxUses) });
-				setInviteState((prevState) => ({ ...prevState, url: data?.url, caption: linkExpirationText(data) }));
-				dispatchToastMessage({ type: 'success', message: t('Invite_link_generated') });
+
+				if (mounted) {
+					setInviteState((prevState) => ({ ...prevState, url: data?.url, caption: linkExpirationText(data) }));
+					dispatchToastMessage({ type: 'success', message: t('Invite_link_generated') });
+				}
 			} catch (error) {
-				setInviteState((prevState) => ({ ...prevState, error: error as Error }));
+				if (mounted) {
+					setInviteState((prevState) => ({ ...prevState, error: error as Error }));
+				}
 			}
-		})();
+		};
+		generateInvite();
+		return () => {
+			mounted = false;
+		};
 	}, [dispatchToastMessage, t, findOrCreateInvite, linkExpirationText, rid, days, maxUses]);
 
 	const handleGenerateLink = useEffectEvent((daysAndMaxUses: { days: string; maxUses: string }) => {
